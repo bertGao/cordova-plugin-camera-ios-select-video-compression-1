@@ -135,9 +135,20 @@ static NSString* toBase64(NSData* data) {
     return (NSClassFromString(@"UIPopoverController") != nil) &&
            (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
 }
+-(void)clearCache{
+    
+    NSString *directoryPath = NSTemporaryDirectory();
+    NSArray *subpaths = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:directoryPath error:nil];
+    
+    for (NSString *subPath in subpaths) {
+        NSString *filePath = [directoryPath stringByAppendingPathComponent:subPath];
+        [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
+    }
+}
 
 - (void)takePicture:(CDVInvokedUrlCommand*)command
 {
+    [self clearCache];
     self.hasPendingOperation = YES;
     
     __weak CDVCamera* weakSelf = self;
@@ -544,8 +555,6 @@ static NSString* toBase64(NSData* data) {
             }];
         }
         else {
-            
-            
             AVAsset* asset = [AVAsset assetWithURL:moviePath];
             /*
              创建AVAssetExportSession对象
@@ -560,7 +569,7 @@ static NSString* toBase64(NSData* data) {
             session.shouldOptimizeForNetworkUse = YES;
             //转换后的格式
             //拼接输出文件路径 为了防止同名 可以根据日期拼接名字 或者对名字进行MD5加密
-            NSString* path = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject]
+            NSString* path = [NSTemporaryDirectory()
                               stringByAppendingPathComponent:@"789.MOV"];
             //判断文件是否存在，如果已经存在删除
             [[NSFileManager defaultManager]removeItemAtPath:path error:nil];
@@ -568,6 +577,7 @@ static NSString* toBase64(NSData* data) {
             session.outputURL = [NSURL fileURLWithPath:path];
             //设置输出类型 这里可以更改输出的类型 具体可以看文档描述
             session.outputFileType = AVFileTypeMPEG4;
+            
             [session exportAsynchronouslyWithCompletionHandler:^{
                 NSLog(@"%@",[NSThread currentThread]);
                 //压缩完成
