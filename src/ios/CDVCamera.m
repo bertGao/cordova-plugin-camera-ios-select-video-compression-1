@@ -507,9 +507,13 @@ static NSString* toBase64(NSData* data) {
     completion(result);
 }
 
-- (CDVPluginResult*)resultForVideo:(NSDictionary*)info
+- (CDVPluginResult*)resultForVideo:(NSString*)moviePath
 {
-    NSString* moviePath = [[info objectForKey:UIImagePickerControllerMediaURL] absoluteString];
+//    NSString* moviePath = [[info objectForKey:UIImagePickerControllerMediaURL] absoluteString];
+    NSData *data = [NSData dataWithContentsOfFile:moviePath];
+    
+    float memorySize = (float)data.length / 1024 / 1024;
+    NSLog(@"视频压缩后大小 %f MB", memorySize);
     return [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:moviePath];
 }
 
@@ -522,6 +526,14 @@ static NSString* toBase64(NSData* data) {
         __block CDVPluginResult* result = nil;
         
         NSString* mediaType = [info objectForKey:UIImagePickerControllerMediaType];
+        
+        NSString* moviePath = [info objectForKey:UIImagePickerControllerMediaURL];
+        
+        NSData *data = [NSData dataWithContentsOfFile:moviePath];
+        
+        float memorySize = (float)data.length / 1024 / 1024;
+        NSLog(@"视频压缩后大小 %f MB", memorySize);
+        
         if ([mediaType isEqualToString:(NSString*)kUTTypeImage]) {
             [weakSelf resultForImage:cameraPicker.pictureOptions info:info completion:^(CDVPluginResult* res) {
                 if (![self usesGeolocation] || picker.sourceType != UIImagePickerControllerSourceTypeCamera) {
@@ -532,10 +544,48 @@ static NSString* toBase64(NSData* data) {
             }];
         }
         else {
-            result = [weakSelf resultForVideo:info];
-            [weakSelf.commandDelegate sendPluginResult:result callbackId:cameraPicker.callbackId];
-            weakSelf.hasPendingOperation = NO;
-            weakSelf.pickerController = nil;
+            
+            
+            AVAsset* asset = [AVAsset assetWithURL:moviePath];
+            /*
+             创建AVAssetExportSession对象
+             压缩的质量
+             AVAssetExportPresetLowQuality 最low的画质最好不要选择实在是看不清楚
+             AVAssetExportPresetMediumQuality 使用到压缩的话都说用这个
+             AVAssetExportPresetHighestQuality 最清晰的画质
+             */
+            AVAssetExportSession * session = [[AVAssetExportSession alloc]
+                                              initWithAsset:asset presetName:AVAssetExportPresetMediumQuality];
+            //优化网络
+            session.shouldOptimizeForNetworkUse = YES;
+            //转换后的格式
+            //拼接输出文件路径 为了防止同名 可以根据日期拼接名字 或者对名字进行MD5加密
+            NSString* path = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject]
+                              stringByAppendingPathComponent:@"789.MOV"];
+            //判断文件是否存在，如果已经存在删除
+            [[NSFileManager defaultManager]removeItemAtPath:path error:nil];
+            //设置输出路径
+            session.outputURL = [NSURL fileURLWithPath:path];
+            //设置输出类型 这里可以更改输出的类型 具体可以看文档描述
+            session.outputFileType = AVFileTypeMPEG4;
+            [session exportAsynchronouslyWithCompletionHandler:^{
+                NSLog(@"%@",[NSThread currentThread]);
+                //压缩完成
+                if(session.status==AVAssetExportSessionStatusCompleted) {
+                    //在主线程中刷新UI界面，弹出控制器通知用户压缩完成 dispatch_async(dispatch_get_main_queue(), ^{
+                    NSLog(@"导出完成");
+                    NSData *data = [NSData dataWithContentsOfFile:session.outputURL];
+                    
+                    float memorySize = (float)data.length / 1024 / 1024;
+                    NSLog(@"视频压缩后大小 %f MB", memorySize);
+
+                    result = [weakSelf resultForVideo:session.outputURL.absoluteString];
+                    [weakSelf.commandDelegate sendPluginResult:result callbackId:cameraPicker.callbackId];
+                    weakSelf.hasPendingOperation = NO;
+                    weakSelf.pickerController = nil;
+                };
+            }];
+
         }
     };
     
