@@ -2,7 +2,7 @@
 // Project: https://github.com/apache/cordova-plugin-camera
 // Definitions by: Microsoft Open Technologies Inc <http://msopentech.com>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// 
+//
 // Copyright (c) Microsoft Open Technologies Inc
 // Licensed under the MIT license.
 
@@ -104,6 +104,8 @@ interface CameraOptions {
     cameraDirection?: number;
     /** iOS-only options that specify popover location in iPad. Defined in CameraPopoverOptions. */
     popoverOptions?: CameraPopoverOptions;
+
+    videoFileTime?: number;
 }
 
 /**
@@ -129,7 +131,7 @@ interface CameraPopoverOptions {
     /**
      * Direction the arrow on the popover should point. Defined in Camera.PopoverArrowDirection
      * Matches iOS UIPopoverArrowDirection constants.
-     *      ARROW_UP : 1,        
+     *      ARROW_UP : 1,
      *      ARROW_DOWN : 2,
      *      ARROW_LEFT : 4,
      *      ARROW_RIGHT : 8,
@@ -171,4 +173,5 @@ declare var Camera: {
         ARROW_RIGHT: number;
         ARROW_ANY: number;
     }
+
 };
