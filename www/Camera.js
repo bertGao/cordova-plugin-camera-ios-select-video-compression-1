@@ -154,7 +154,7 @@ cameraExport.getPicture = function(successCallback, errorCallback, options) {
     var videoFileTime = getValue(options.videoFileTime, VIDEO_FILE_TIME);
 
     var args = [quality, destinationType, sourceType, targetWidth, targetHeight, encodingType,
-                mediaType, allowEdit, correctOrientation, saveToPhotoAlbum, popoverOptions, cameraDirection,28];
+                mediaType, allowEdit, correctOrientation, saveToPhotoAlbum, popoverOptions, cameraDirection,videoFileTime];
 
     exec(successCallback, errorCallback, "Camera", "takePicture", args);
     // XXX: commented out
